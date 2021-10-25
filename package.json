@@ -1,0 +1,10 @@
+{
+  "name": "explorer_api",
+  "version": "1.0.0",
+  "description": "Explorer API",
+  "main": "index.js",
+  "repository": "git@github.com:ycandau/explorer_api.git",
+  "author": "Yves Candau <ycandau@gmail.com>",
+  "license": "MPL-2.0",
+  "private": true
+}
