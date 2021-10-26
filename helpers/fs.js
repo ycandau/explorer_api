@@ -1,7 +1,8 @@
-const fsp = require('fs/promises');
-const { resolve } = require('path');
+//------------------------------------------------------------------------------
+// Using the Promises API for file system operations
 
-const [node_path, file_path, ...dir_paths] = process.argv;
+const { stat, readdir } = require('fs/promises');
+const { resolve } = require('path');
 
 //------------------------------------------------------------------------------
 // Sorting function for file info objects
@@ -17,8 +18,8 @@ const sortFiles = (f1, f2) => {
 //------------------------------------------------------------------------------
 // Get one file info object
 
-const getFileInfo = async (path, name, expandedDirs) => {
-  const stats = await fsp.stat(resolve(path, name));
+const getFileData = async (path, name, expandedDirs) => {
+  const stats = await stat(resolve(path, name));
   const isDir = stats.isDirectory();
   return {
     name,
@@ -35,11 +36,11 @@ const getFileInfo = async (path, name, expandedDirs) => {
 
 const getChildren = async (path, name, expandedDirs) => {
   const dirPath = resolve(path, name);
-  const childrenNames = await fsp.readdir(dirPath);
+  const childrenNames = await readdir(dirPath);
 
   const children = [];
   for (const childName of childrenNames) {
-    const fileInfo = await getFileInfo(dirPath, childName, expandedDirs);
+    const fileInfo = await getFileData(dirPath, childName, expandedDirs);
 
     if (fileInfo.isDir && fileInfo.isExpanded) {
       fileInfo.children = await getChildren(dirPath, childName, expandedDirs);
