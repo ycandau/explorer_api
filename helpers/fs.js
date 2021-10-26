@@ -84,16 +84,19 @@ const getTrees = async (roots) => {
   const watched = new Map(); // Use map to avoid redundant watchers
 
   for (const root of roots) {
-    const tree = await getTree(root, watched);
-    trees.push(tree);
+    try {
+      const tree = await getTree(root, watched);
+      trees.push(tree);
+    } catch (err) {
+      console.error(
+        `ERROR: Root: '${resolve(root.path, root.name)}'\n${err.message}`
+      );
+    }
   }
 
   const watchPaths = [...watched.values()];
   watcher.add(watchPaths);
-  watcher;
 
-  console.log(watchPaths);
-  console.log(watcher.getWatched());
   return trees;
 };
 
