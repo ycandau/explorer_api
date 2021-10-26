@@ -1,3 +1,5 @@
+// @todo:
+
 //------------------------------------------------------------------------------
 // Using the Promises API for file system operations
 // And chokidar as file watcher
@@ -81,6 +83,7 @@ const getTree = async (root, watched) => {
 
 const getTrees = async (roots) => {
   const trees = [];
+  const errors = [];
   const watched = new Map(); // Use map to avoid redundant watchers
 
   for (const root of roots) {
@@ -88,16 +91,15 @@ const getTrees = async (roots) => {
       const tree = await getTree(root, watched);
       trees.push(tree);
     } catch (err) {
-      console.error(
-        `ERROR: Root: '${resolve(root.path, root.name)}'\n${err.message}`
-      );
+      errors.push({ ...err, type: 'tree' });
+      console.error(err);
     }
   }
 
   const watchPaths = [...watched.values()];
   watcher.add(watchPaths);
 
-  return trees;
+  return { trees, errors };
 };
 
 //------------------------------------------------------------------------------
