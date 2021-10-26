@@ -2,12 +2,17 @@
   "name": "explorer_api",
   "version": "1.0.0",
   "description": "Explorer API",
-  "main": "index.js",
+  "main": "file-explorer.js",
   "repository": "git@github.com:ycandau/explorer_api.git",
   "author": "Yves Candau <ycandau@gmail.com>",
   "license": "MPL-2.0",
   "private": true,
+  "scripts": {
+    "nodemon": "nodemon .\\file-explorer.js -- \"./dirs\" \"./dirs/dir1\" \"./dirs/dir2\""
+  },
   "dependencies": {
+    "chokidar": "^3.5.2",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "morgan": "^1.10.0"
   },
