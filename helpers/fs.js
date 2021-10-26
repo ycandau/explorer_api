@@ -88,9 +88,33 @@ const getTrees = async (roots) => {
     trees.push(tree);
   }
 
-  console.log(watched);
+  const watchPaths = [...watched.values()];
+  watcher.add(watchPaths);
+  watcher;
+
+  console.log(watchPaths);
+  console.log(watcher.getWatched());
   return trees;
 };
+
+//------------------------------------------------------------------------------
+// File watcher
+
+const setupWatcher = () => {
+  const watcher = chokidar.watch();
+
+  watcher
+    .on('add', (path) => console.log(`Add: ${path}`))
+    .on('change', (path) => console.log(`Change: ${path}`))
+    .on('unlink', (path) => console.log(`Remove: ${path}`))
+    .on('addDir', (path) => console.log(`Add dir: ${path}`))
+    .on('unlinkDir', (path) => console.log(`Remove dir: ${path}`))
+    .on('error', (err) => console.error(err.message));
+
+  return watcher;
+};
+
+const watcher = setupWatcher();
 
 //------------------------------------------------------------------------------
 
