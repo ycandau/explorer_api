@@ -5,17 +5,18 @@
 const express = require('express');
 const router = express.Router();
 
-const getTreeData = require('../helpers/fs');
+const getTrees = require('../helpers/fs');
 
 const [nodePath, filePath, ...dirPaths] = process.argv;
 
-const tree = {
-  root: dirPaths[0],
+const roots = dirPaths.map((path) => ({
+  name: path,
+  path: '.',
   expandedDirs: [],
-};
+}));
 
 router.get('/ls', async (req, res) => {
-  const data = await getTreeData(tree);
+  const data = await getTrees(roots);
   res.json(data);
 });
 

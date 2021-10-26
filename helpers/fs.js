@@ -16,23 +16,24 @@ const sortFiles = (f1, f2) => {
 };
 
 //------------------------------------------------------------------------------
-// Get one file info object
+// Get one file data object
 
-const getFileData = async (path, name, expandedDirs) => {
+const getFileData = async (path, name, expandedDirs, expand = false) => {
   const stats = await stat(resolve(path, name));
   const isDir = stats.isDirectory();
+  const isExpanded = expand ? true : isDir && expandedDirs.has(stats.ino);
   return {
     name,
     path,
     id: stats.ino,
     isDir,
-    isExpanded: isDir && expandedDirs.has(stats.ino),
+    isExpanded,
     children: null,
   };
 };
 
 //------------------------------------------------------------------------------
-// Get an array of children file objects
+// Get an array of children
 
 const getChildren = async (path, name, expandedDirs) => {
   const dirPath = resolve(path, name);
@@ -52,14 +53,30 @@ const getChildren = async (path, name, expandedDirs) => {
 };
 
 //------------------------------------------------------------------------------
-// Get the tree of file objects
+// Get a tree of file objects
 
-const getTreeData = async (tree) => {
-  const expandedDirs = new Set(tree.expandedDirs);
-  const children = await getChildren('.', tree.root, expandedDirs);
-  return { ...tree, children };
+const getTree = async (root) => {
+  const expandedDirs = new Set(root.expandedDirs);
+  const expand = true;
+
+  const tree = await getFileData(root.path, root.name, expandedDirs, expand);
+  tree.children = await getChildren(root.path, root.name, expandedDirs);
+
+  return tree;
+};
+
+//------------------------------------------------------------------------------
+// Get an array of trees
+
+const getTrees = async (roots) => {
+  const trees = [];
+  for (const root of roots) {
+    const tree = await getTree(root);
+    trees.push(tree);
+  }
+  return trees;
 };
 
 //------------------------------------------------------------------------------
 
-module.exports = getTreeData;
+module.exports = getTrees;
