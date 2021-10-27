@@ -1,3 +1,5 @@
+// @todo:
+
 //------------------------------------------------------------------------------
 // Using the Promises API for file system operations
 // And chokidar as file watcher
@@ -20,14 +22,15 @@ const sortFiles = (f1, f2) => {
 //------------------------------------------------------------------------------
 // Get one file data object
 
-const getFileData = async (path, name, expandedDirs, expand = false) => {
+const getFileData = async (path, name, depth, expandedDirs, expand = false) => {
   const stats = await stat(resolve(path, name));
   const isDir = stats.isDirectory();
   // const isExpanded = expand ? true : isDir && expandedDirs.has(stats.ino);
-  const isExpanded = true;
+  const isExpanded = true && isDir;
   return {
     name,
     path,
+    depth,
     id: stats.ino,
     isDir,
     isExpanded,
@@ -38,17 +41,22 @@ const getFileData = async (path, name, expandedDirs, expand = false) => {
 //------------------------------------------------------------------------------
 // Get an array of children
 
-const getChildren = async (path, name, expandedDirs, watched) => {
+const getChildren = async (path, name, depth, expandedDirs, watched) => {
   const dirPath = resolve(path, name);
   const childrenNames = await readdir(dirPath);
 
   const children = [];
   for (const childName of childrenNames) {
-    const fileData = await getFileData(dirPath, childName, expandedDirs);
+    const fileData = await getFileData(dirPath, childName, depth, expandedDirs);
 
     if (fileData.isDir && fileData.isExpanded) {
       watched.set(fileData.id, resolve(fileData.path, fileData.name));
-      fileData.children = await getChildren(dirPath, childName, expandedDirs);
+      fileData.children = await getChildren(
+        dirPath,
+        childName,
+        depth + 1,
+        expandedDirs
+      );
     }
     children.push(fileData);
   }
@@ -63,10 +71,11 @@ const getTree = async (root, watched) => {
   const expandedDirs = new Set(root.expandedDirs);
   const expand = true;
 
-  const tree = await getFileData(root.path, root.name, expandedDirs, expand);
+  const tree = await getFileData(root.path, root.name, 0, expandedDirs, expand);
   tree.children = await getChildren(
     root.path,
     root.name,
+    1,
     expandedDirs,
     watched
   );
@@ -81,6 +90,7 @@ const getTree = async (root, watched) => {
 
 const getTrees = async (roots) => {
   const trees = [];
+  const errors = [];
   const watched = new Map(); // Use map to avoid redundant watchers
 
   for (const root of roots) {
@@ -88,16 +98,15 @@ const getTrees = async (roots) => {
       const tree = await getTree(root, watched);
       trees.push(tree);
     } catch (err) {
-      console.error(
-        `ERROR: Root: '${resolve(root.path, root.name)}'\n${err.message}`
-      );
+      errors.push({ ...err, type: 'tree' });
+      console.error(err);
     }
   }
 
   const watchPaths = [...watched.values()];
   watcher.add(watchPaths);
 
-  return trees;
+  return { trees, errors };
 };
 
 //------------------------------------------------------------------------------
