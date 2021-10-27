@@ -26,42 +26,91 @@ const getFileData = async (path, name, depth, expandedDirs, expand = false) => {
   const stats = await stat(resolve(path, name));
   const isDir = stats.isDirectory();
   // const isExpanded = expand ? true : isDir && expandedDirs.has(stats.ino);
-  const isExpanded = true && isDir;
+  const isExpanded = isDir;
+
   return {
     name,
     path,
     depth,
-    id: stats.ino,
+    ino: stats.ino,
     isDir,
     isExpanded,
-    children: null,
   };
 };
 
 //------------------------------------------------------------------------------
-// Get an array of children
+// Collect the children files of a directory into the files array
 
-const getChildren = async (path, name, depth, expandedDirs, watched) => {
+const collectChildren = async (
+  files,
+  path,
+  name,
+  depth,
+  expandedDirs,
+  watched
+) => {
   const dirPath = resolve(path, name);
   const childrenNames = await readdir(dirPath);
 
+  // First pass to get all children and sort
   const children = [];
   for (const childName of childrenNames) {
-    const fileData = await getFileData(dirPath, childName, depth, expandedDirs);
+    const child = await getFileData(dirPath, childName, depth, expandedDirs);
+    children.push(child);
+  }
+  children.sort(sortFiles);
 
-    if (fileData.isDir && fileData.isExpanded) {
-      watched.set(fileData.id, resolve(fileData.path, fileData.name));
-      fileData.children = await getChildren(
+  // Second pass to recurse and expand as needed
+  for (const child of children) {
+    files.push(child);
+
+    if (child.isDir && child.isExpanded) {
+      // Watchers
+      watched.set(child.ino, resolve(child.path, child.name));
+
+      // Children
+      await collectChildren(
+        files,
         dirPath,
-        childName,
+        child.name,
         depth + 1,
         expandedDirs
       );
     }
-    children.push(fileData);
+  }
+};
+
+//------------------------------------------------------------------------------
+// Add indexes and next non-child indexes
+
+const addIndexes = (files) => {
+  let prevDepth = 0;
+  const stack = []; // Stack of indexes and depths for expanded directories
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    file.index = i;
+
+    // Stack the indexes and depths of expanded directories
+    if (file.depth > prevDepth) {
+      stack.push({ index: i - 1, depth: prevDepth });
+    }
+
+    // Set the indexes of next non-child files, so we can skip as needed
+    if (file.depth < prevDepth) {
+      while (stack[stack.length - 1].depth >= file.depth) {
+        const prev = stack.pop();
+        files[prev.index].nextNonChild = i;
+      }
+    }
+    prevDepth = file.depth;
   }
 
-  return children.sort(sortFiles);
+  // Unstack remaining
+  while (stack.length) {
+    const { index } = stack.pop();
+    files[index].nextNonChild = files.length;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -69,20 +118,28 @@ const getChildren = async (path, name, depth, expandedDirs, watched) => {
 
 const getTree = async (root, watched) => {
   const expandedDirs = new Set(root.expandedDirs);
-  const expand = true;
+  const expand = true; // expand root directory
+  const files = [];
 
-  const tree = await getFileData(root.path, root.name, 0, expandedDirs, expand);
-  tree.children = await getChildren(
+  // Root
+  const rootFile = await getFileData(
     root.path,
     root.name,
-    1,
+    0,
     expandedDirs,
-    watched
+    expand
   );
+  files.push(rootFile);
 
-  watched.set(tree.id, resolve(tree.path, tree.name));
+  // Children
+  await collectChildren(files, root.path, root.name, 1, expandedDirs, watched);
 
-  return tree;
+  // Watchers
+  watched.set(rootFile.ino, resolve(rootFile.path, rootFile.name));
+
+  addIndexes(files);
+
+  return files;
 };
 
 //------------------------------------------------------------------------------
@@ -93,14 +150,14 @@ const getTrees = async (roots) => {
   const errors = [];
   const watched = new Map(); // Use map to avoid redundant watchers
 
-  for (const root of roots) {
-    try {
+  try {
+    for (const root of roots) {
       const tree = await getTree(root, watched);
       trees.push(tree);
-    } catch (err) {
-      errors.push({ ...err, type: 'tree' });
-      console.error(err);
     }
+  } catch (err) {
+    errors.push({ ...err, type: 'tree' });
+    console.error(err);
   }
 
   const watchPaths = [...watched.values()];

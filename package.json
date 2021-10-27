@@ -8,8 +8,7 @@
   "license": "MPL-2.0",
   "private": true,
   "scripts": {
-    "start": "node file-explorer.js",
-    "nodemon": "nodemon .\\file-explorer.js -- \"./dirs\" \"./dirs/dir1\" \"./dirs/dir2\""
+    "start": "nodemon .\\file-explorer.js -- \"./dirs\" \"./dirs/dir1\" \"./dirs/dir2\""
   },
   "dependencies": {
     "chokidar": "^3.5.2",
