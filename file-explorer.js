@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: false }));
 //------------------------------------------------------------------------------
 // Create routers and mount
 
-app.use('/', require('./routes/ls'));
+app.use('/', require('./routes/trees'));
 
 //------------------------------------------------------------------------------
 // Start listening

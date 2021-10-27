@@ -15,7 +15,7 @@ const roots = dirPaths.map((path) => ({
   expandedDirs: [],
 }));
 
-router.get('/ls', async (req, res) => {
+router.get('/trees', async (req, res) => {
   const data = await getTrees(roots);
   res.json(data);
 });
