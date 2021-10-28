@@ -13,5 +13,10 @@ module.exports = (state) => {
     res.json(data);
   });
 
+  router.put('/', async (req, res) => {
+    console.log(req.body);
+    res.send();
+  });
+
   return router;
 };

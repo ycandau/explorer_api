@@ -14,7 +14,8 @@ const morgan = require('morgan');
 app.use(morgan('dev'));
 
 // Parse the body
-app.use(express.urlencoded({ extended: false }));
+// app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ extended: false }));
 
 //------------------------------------------------------------------------------
 // Asynchronous initialization
@@ -25,7 +26,7 @@ const init = async () => {
   const state = await initState(process.argv.slice(2));
 
   // Router
-  const router = require('./routes/trees')(state);
+  const router = require('./routes/api')(state);
   app.use('/api', router);
 
   // Listen
