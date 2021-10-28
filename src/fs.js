@@ -139,7 +139,7 @@ const getTree = async (root, watched) => {
 
   addIndexes(files);
 
-  return files;
+  return { files };
 };
 
 //------------------------------------------------------------------------------

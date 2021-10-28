@@ -7,7 +7,7 @@ const router = express.Router();
 
 const { resolve, dirname, basename } = require('path');
 
-const getTrees = require('../helpers/fs');
+const getTrees = require('../src/fs');
 
 const [nodePath, filePath, ...dirPaths] = process.argv;
 
