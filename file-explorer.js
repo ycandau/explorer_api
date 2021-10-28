@@ -1,46 +1,41 @@
 //------------------------------------------------------------------------------
-// server.js
+// file-explorer.js
 //------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Load .env data
 
 require('dotenv').config();
-
-//------------------------------------------------------------------------------
-// Constants
-
 const PORT = process.env.PORT || 3000;
 
-//------------------------------------------------------------------------------
-// Create and initialize server
-
+// Create and initialize the server
 const express = require('express');
 const app = express();
 
-//------------------------------------------------------------------------------
-// Use middleware
-
-// Log server
+// Log the server
 const morgan = require('morgan');
 app.use(morgan('dev'));
 
-// Parse body
-app.use(express.urlencoded({ extended: false }));
+// Parse the body
+// app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ extended: false }));
 
 //------------------------------------------------------------------------------
-// Create routers and mount
+// Asynchronous initialization
 
-app.use('/', require('./routes/trees'));
+const init = async () => {
+  // State
+  const { initState } = require('./src/state');
+  const state = await initState(process.argv.slice(2));
 
-//------------------------------------------------------------------------------
-// Start listening
+  // Router
+  const router = require('./routes/api')(state);
+  app.use('/api', router);
 
-app.listen(PORT, () =>
-  console.log(`
+  // Listen
+  app.listen(PORT, () =>
+    console.log(`
 -------------------------------
 Explorer listening on port ${PORT}
 -------------------------------`)
-);
+  );
+};
 
-//------------------------------------------------------------------------------
+init();
