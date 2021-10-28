@@ -2,60 +2,64 @@ const { resolve, basename } = require('path');
 const { stat } = require('fs/promises');
 const chokidar = require('chokidar');
 
-//------------------------------------------------------------------------------
-// Initialize the state
-
 // root:        { name, path, id, expandedDirs: map<id, path> }
 // roots:       map<id, root>
 // watchedDirs: map<id, path>
 
+//------------------------------------------------------------------------------
+// Initialize the state
+
 const initState = async (paths) => {
-  const roots = new Map();
-  let watchedDirs = new Map();
-  const watcher = chokidar.watch();
+  const state = {
+    roots: new Map(),
+    watcher: newWatcher(),
+    watchedDirs: new Map(),
+  };
 
-  watcher
-    .on('add', (path) => console.log(`Add: ${path}`))
-    .on('change', (path) => console.log(`Change: ${path}`))
-    .on('unlink', (path) => console.log(`Remove: ${path}`))
-    .on('addDir', (path) => console.log(`Add dir: ${path}`))
-    .on('unlinkDir', (path) => console.log(`Remove dir: ${path}`))
-    .on('error', (err) => console.error(err.message));
-
-  // Add roots from the command line arguments
   for (const path of paths) {
-    await addRoot(roots, path);
+    await addRoot(state, path);
   }
 
-  const dirsToWatch = getDirsToWatch(roots);
-  watchedDirs = updateDirsWatched(watchedDirs, dirsToWatch, watcher);
+  return state;
+};
 
-  return { roots, watchedDirs, watcher };
+//------------------------------------------------------------------------------
+// Set the watcher event handlers
+
+const newWatcher = () => {
+  return chokidar
+    .watch()
+    .on('add', (path) => 0)
+    .on('change', (path) => 0)
+    .on('unlink', (path) => 0)
+    .on('addDir', (path) => 0)
+    .on('unlinkDir', (path) => 0)
+    .on('error', (err) => 0);
+
+  // .on('add', (path) => console.log(`Add: ${path}`))
+  // .on('change', (path) => console.log(`Change: ${path}`))
+  // .on('unlink', (path) => console.log(`Remove: ${path}`))
+  // .on('addDir', (path) => console.log(`Add dir: ${path}`))
+  // .on('unlinkDir', (path) => console.log(`Remove dir: ${path}`))
+  // .on('error', (err) => console.error(err.message));
 };
 
 //------------------------------------------------------------------------------
 // Add a root
 
-const addRoot = async (roots, path) => {
+const addRoot = async (state, path) => {
   const resolvedPath = resolve(path);
   const stats = await stat(resolvedPath);
-  const expandedDirs = new Map([[stats.ino, resolvedPath]]);
 
   const root = {
     name: basename(resolvedPath),
     path: resolvedPath,
     id: stats.ino,
-    expandedDirs,
+    expandedDirs: new Map([[stats.ino, resolvedPath]]),
   };
-  roots.set(stats.ino, root);
-};
 
-//------------------------------------------------------------------------------
-// Update the map of expanded directories for one root
-
-const updateExpanded = (roots, rootId, expandedDirs) => {
-  const root = roots.get(rootId);
-  root.expandedDirs = new Map(expandedDirs);
+  state.roots.set(stats.ino, root);
+  await updateDirsWatched(state);
 };
 
 //------------------------------------------------------------------------------
@@ -74,22 +78,35 @@ const getDirsToWatch = (roots) => {
 //------------------------------------------------------------------------------
 // Update the watcher based on the differences in directories to watch
 
-const updateDirsWatched = (watchedDirs, dirsToWatch, watcher) => {
-  for (const [fileId, path] of watchedDirs) {
+const updateDirsWatched = async (state) => {
+  const dirsToWatch = getDirsToWatch(state.roots);
+
+  // Watch and unwatch based on difference
+  for (const [fileId, path] of state.watchedDirs) {
     if (!dirsToWatch.has(fileId)) {
-      watcher.unwatch(path); // async
-      // console.log(`-- Unwatching: ${path}`);
+      const glob = resolve(path, '*');
+      await state.watcher.unwatch(glob); // async
+      // console.log(`-- Unwatching: ${glob}`);
     }
   }
   for (const [fileId, path] of dirsToWatch) {
-    if (!watchedDirs.has(fileId)) {
-      watcher.add(path);
-      // console.log(`-- Watching:   ${path}`);
+    if (!state.watchedDirs.has(fileId)) {
+      state.watcher.add(path);
+      // console.log(`++ Watching:   ${path}`);
     }
   }
-  return dirsToWatch;
+  state.watchedDirs = dirsToWatch;
+};
+
+//------------------------------------------------------------------------------
+// Update the map of expanded directories for one root
+
+const updateRoot = async (state, newRoot) => {
+  const root = state.roots.get(newRoot.id);
+  root.expandedDirs = new Map(newRoot.expandedDirs);
+  await updateDirsWatched(state);
 };
 
 //------------------------------------------------------------------------------
 
-module.exports = { initState };
+module.exports = { initState, updateRoot };

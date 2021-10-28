@@ -97,6 +97,7 @@ const addIndexes = (files) => {
 
 const getTree = async (root) => {
   const files = [];
+  const isExpanded = root.expandedDirs.size !== 0;
 
   // Push root first
   const rootFile = {
@@ -105,12 +106,14 @@ const getTree = async (root) => {
     depth: 0,
     id: root.id,
     isDir: true,
-    isExpanded: true,
+    isExpanded,
   };
   files.push(rootFile);
 
   // Collect children
-  await collectChildren(files, root.path, 1, root.expandedDirs);
+  if (isExpanded) {
+    await collectChildren(files, root.path, 1, root.expandedDirs);
+  }
 
   // Set indexes
   addIndexes(files);
@@ -122,6 +125,7 @@ const getTree = async (root) => {
 // Get an array of trees
 
 const getTrees = async (roots) => {
+  console.log(roots);
   const trees = [];
   const errors = [];
 
