@@ -81,7 +81,7 @@ const root = {
   name, // The basename of the folder
   path, // The resolved path of the folder
   id, // The index node of the folder as a unique identifier
-  expandedDirs, // A map of expanded dirs
+  expandedDirs, // A map of expanded directories
 };
 ```
 
@@ -108,7 +108,7 @@ To send data to the client I initially considered two formats:
 - Nested objects that parallel the folder structure.
 - Arrays aggregated by traversing the tree structure of the folders.
 
-Formatting the data as a list is going to be necessary for the eventual rendering on the client. So I decided to aggregate the arrays directly on the server. Due to React's use of non-mutating state data, arrays are also going to be much easier to work with than nested objects.
+Formatting the data as a list is going to be necessary for the eventual rendering on the client. So I decided to aggregate the arrays directly on the server. Due to React's use of immutable state data, arrays are also going to be easier to work with than potentially deeply nested objects.
 
 The server creates and sends a list of file objects for each root with the following information:
 
@@ -119,9 +119,9 @@ const fileObject = {
   depth, // The depth in the folder tree structure
   id, // The index node of the file
   isDir, // Whether the file is a directory
-  isExpanded, // Whether the files is expanded
+  isExpanded, // Whether the file is expanded
   index, // The index in the array
-  nextNonChild, // For folders: The index of the next entry that is not a child
+  nextNonChild, // For folders: The index of the next element that is not a child
 };
 ```
 
