@@ -56,6 +56,7 @@ const newWatcher = (roots, wss) => {
 const addRoot = async (state, path) => {
   try {
     const resolvedPath = resolve(path);
+    console.log(resolvedPath);
     const stats = await stat(resolvedPath);
 
     const root = {
