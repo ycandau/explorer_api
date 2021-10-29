@@ -84,15 +84,14 @@ const updateDirsWatched = async (state) => {
   // Watch and unwatch based on difference
   for (const [fileId, path] of state.watchedDirs) {
     if (!dirsToWatch.has(fileId)) {
-      const glob = resolve(path, '*');
-      await state.watcher.unwatch(glob); // async
+      await state.watcher.unwatch(path); // async
       // console.log(`-- Unwatching: ${glob}`);
     }
   }
   for (const [fileId, path] of dirsToWatch) {
     if (!state.watchedDirs.has(fileId)) {
       state.watcher.add(path);
-      // console.log(`++ Watching:   ${path}`);
+      // console.log(`++ Watching: ${path}`);
     }
   }
   state.watchedDirs = dirsToWatch;
@@ -105,6 +104,8 @@ const updateRoot = async (state, newRoot) => {
   const root = state.roots.get(newRoot.id);
   root.expandedDirs = new Map(newRoot.expandedDirs);
   await updateDirsWatched(state);
+
+  console.log(state.watcher.getWatched());
 };
 
 //------------------------------------------------------------------------------

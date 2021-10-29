@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------------
 // Using the Promises API for file system operations
-// And chokidar as file watcher
 
 const { stat, readdir } = require('fs/promises');
 const { resolve } = require('path');
@@ -125,7 +124,6 @@ const getTree = async (root) => {
 // Get an array of trees
 
 const getTrees = async (roots) => {
-  console.log(roots);
   const trees = [];
   const errors = [];
 

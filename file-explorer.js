@@ -29,8 +29,42 @@ const init = async () => {
   const router = require('./routes/api')(state);
   app.use('/api', router);
 
+  //----------------------------------------------------------------------------
+
+  const http = require('http');
+
+  const server = http.Server(app);
+  const WebSocket = require('ws');
+  const wss = new WebSocket.Server({ server });
+
+  wss.on('connection', (ws) => {
+    ws.onmessage = (event) => {
+      console.log(`Message Received: ${event.data}`);
+
+      if (event.data === 'ping') {
+        ws.send(JSON.stringify('pongo'));
+      }
+    };
+  });
+
+  // function updateAppointment(id, interview) {
+  //   wss.clients.forEach(function eachClient(client) {
+  //     if (client.readyState === WebSocket.OPEN) {
+  //       client.send(
+  //         JSON.stringify({
+  //           type: 'SET_INTERVIEW',
+  //           id,
+  //           interview,
+  //         })
+  //       );
+  //     }
+  //   });
+  // }
+
+  //----------------------------------------------------------------------------
+
   // Listen
-  app.listen(PORT, () =>
+  server.listen(PORT, () =>
     console.log(`
 -------------------------------
 Explorer listening on port ${PORT}
