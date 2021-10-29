@@ -1,12 +1,12 @@
+//------------------------------------------------------------------------------
+// Persistent data on the server
+//------------------------------------------------------------------------------
+
 const { resolve, basename } = require('path');
 const { stat } = require('fs/promises');
 const chokidar = require('chokidar');
 
 const getTrees = require('./fs');
-
-// root:        { name, path, id, expandedDirs: map<id, path> }
-// roots:       map<id, root>
-// watchedDirs: map<id, path>
 
 //------------------------------------------------------------------------------
 // Initialize the state
@@ -95,13 +95,11 @@ const updateDirsWatched = async (state) => {
   for (const [fileId, path] of state.watchedDirs) {
     if (!dirsToWatch.has(fileId)) {
       await state.watcher.unwatch(path); // async
-      // console.log(`-- Unwatching: ${glob}`);
     }
   }
   for (const [fileId, path] of dirsToWatch) {
     if (!state.watchedDirs.has(fileId)) {
       state.watcher.add(path);
-      // console.log(`++ Watching: ${path}`);
     }
   }
   state.watchedDirs = dirsToWatch;

@@ -1,4 +1,7 @@
 //------------------------------------------------------------------------------
+// File system operations
+//------------------------------------------------------------------------------
+
 // Using the Promises API for file system operations
 
 const { stat, readdir } = require('fs/promises');
@@ -132,7 +135,7 @@ const getTrees = async (roots) => {
       const tree = await getTree(root);
       trees.push(tree);
     } catch (err) {
-      // Happens if a root folder is deleted: Delete the root
+      // Happens if a root folder is deleted: Then delete the root
       roots.delete(root.id);
     }
   }
