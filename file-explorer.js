@@ -14,7 +14,6 @@ const morgan = require('morgan');
 app.use(morgan('dev'));
 
 // Parse the body
-// app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ extended: false }));
 
 //------------------------------------------------------------------------------

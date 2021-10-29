@@ -114,8 +114,6 @@ const updateRoot = async (state, newRoot) => {
   const root = state.roots.get(newRoot.id);
   root.expandedDirs = new Map(newRoot.expandedDirs);
   await updateDirsWatched(state);
-
-  console.log(state.watcher.getWatched());
 };
 
 //------------------------------------------------------------------------------

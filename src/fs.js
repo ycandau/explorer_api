@@ -127,14 +127,14 @@ const getTrees = async (roots) => {
   const trees = [];
   const errors = [];
 
-  try {
-    for (const root of roots.values()) {
+  for (const root of roots.values()) {
+    try {
       const tree = await getTree(root);
       trees.push(tree);
+    } catch (err) {
+      // Happens if a root folder is deleted: Delete the root
+      roots.delete(root.id);
     }
-  } catch (err) {
-    errors.push({ ...err, type: 'tree' });
-    console.error(err.message);
   }
 
   return { trees, errors };
