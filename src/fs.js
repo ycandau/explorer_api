@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
+// File system operations
+//------------------------------------------------------------------------------
+
 // Using the Promises API for file system operations
-// And chokidar as file watcher
 
 const { stat, readdir } = require('fs/promises');
 const { resolve } = require('path');
@@ -97,6 +99,7 @@ const addIndexes = (files) => {
 
 const getTree = async (root) => {
   const files = [];
+  const isExpanded = root.expandedDirs.size !== 0;
 
   // Push root first
   const rootFile = {
@@ -105,12 +108,14 @@ const getTree = async (root) => {
     depth: 0,
     id: root.id,
     isDir: true,
-    isExpanded: true,
+    isExpanded,
   };
   files.push(rootFile);
 
   // Collect children
-  await collectChildren(files, root.path, 1, root.expandedDirs);
+  if (isExpanded) {
+    await collectChildren(files, root.path, 1, root.expandedDirs);
+  }
 
   // Set indexes
   addIndexes(files);
@@ -125,14 +130,14 @@ const getTrees = async (roots) => {
   const trees = [];
   const errors = [];
 
-  try {
-    for (const root of roots.values()) {
+  for (const root of roots.values()) {
+    try {
       const tree = await getTree(root);
       trees.push(tree);
+    } catch (err) {
+      // Happens if a root folder is deleted: Then delete the root
+      roots.delete(root.id);
     }
-  } catch (err) {
-    errors.push({ ...err, type: 'tree' });
-    console.error(err);
   }
 
   return { trees, errors };
