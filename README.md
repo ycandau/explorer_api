@@ -14,14 +14,7 @@
 
 ## About
 
-This repository contains the API for a **file explorer** component. The server is built with [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/). It serves file lists to the frontend application and establishes a WebSocket connection to update it on any file changes.
-
----
-
-## Features
-
-- WebSocket connection to update the client on file changes.
-- Sends tree information
+This repository contains the API for a **file explorer** component. The server is built with [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/). It serves file lists to the frontend application and establishes a WebSocket connection to update the client on any file changes.
 
 ---
 
@@ -45,30 +38,30 @@ Install all the dependencies with [yarn](https://classic.yarnpkg.com/en/):
 yarn install
 ```
 
-Setup the local environment variables in the `.env` file:
+Set the local environment variables in the `.env` file:
 
 ```shell
 PORT=8000
 ```
 
-Run the server with any number of arguments to indicate which folders should be explored:
+Run the server with any number of arguments to indicate which folders should be explored. A set of demonstration folders is included in the repository:
 
 ```shell
 node .\file-explorer.js .
 node .\file-explorer.js . ./dirs ./dirs/dir1 ./dirs/dir2 ./dirs/dir3
 ```
 
-The server works with a react frontend application found [here](https://github.com/ycandau/explorer). Start the server before starting the frontend app.
+The server works with a React frontend application found [here](https://github.com/ycandau/explorer). Start the server before starting the frontend app.
 
 ---
 
 ## Implementation and choices
 
-#### File watcher
+### File watcher
 
-I first looked into the native Node.js solutions (`fs.watch()` and `fs.watchFile()`). The official documentation highlights a lot of caveats. And based on further readings it seems like using these directly is far from optimal (duplicated events, differences between platforms...). I thus chose the **chokidar** library which comes recommended by many, has few dependencies, and is actually the solution adopted by VS Code.
+I first looked into the native Node.js solutions: `fs.watch()` and `fs.watchFile()`. The official documentation highlights a lot of caveats. And based on further readings it seems like using these directly is far from optimal (duplicated events, differences between platforms...). I thus chose the **chokidar** library which comes recommended by many, has few dependencies, and is actually the solution adopted by VS Code.
 
-#### General approach
+### General approach
 
 We can avoid the brute force approach of fully recursing through the folder structure by keeping track of which folders are expanded and which are collapsed. Essentially, we don't need to know what is inside collapsed folders until we expand them. This has many advantages:
 
@@ -76,7 +69,7 @@ We can avoid the brute force approach of fully recursing through the folder stru
 - We can send less data.
 - We can maintain fewer watchers.
 
-#### Server state
+### Server state
 
 To implement this approach the server needs to keep track of the following:
 
@@ -109,7 +102,7 @@ The server then:
 - calculates the difference between the current map and the new map,
 - adds and removes directories from the `watcher` based on this difference.
 
-#### Data format
+### Data format
 
 To send data to the client I initially considered two formats:
 
@@ -133,9 +126,9 @@ const fileObject = {
 };
 ```
 
-The tree traversal thus keeps some information for later use such as the depth. For folders we also compute the indexes of the next entries that are not children. We can do this in linear time and it makes it easy on the client side to skip over a folder if we collapse it.
+The tree traversal thus keeps some information for later use such as the depth. For folders we also compute the indexes of the next entries that are not children. We can do this in linear time and it makes it easy on the client side to skip over a folder when we collapse it.
 
-Sorting is done at each folder level during the tree traversal, by directory versus non-directory status first, and alphabetical order next.
+Sorting is done at each folder level during the tree traversal, by directory versus non-directory status first, and alphabetical order second.
 
 ---
 
@@ -159,16 +152,18 @@ The server could also be improved by doing per root updates rather than always f
 
 I used inodes as unique identifiers for the files, roots and trees. After double checking I think uniqueness is only guaranteed per file device. So the unique ids should be changed to a combination of the `ino` and `dev` properties returned by `fs.stat()`.
 
-Adding and removing the files watched by the chokidar watcher does not seem to work exactly as intended. Globbing patterns apparently work differently on Windows platforms. This is something I would need to experiment further with.
+Adding and removing the files watched by the chokidar watcher does not seem to work exactly as intended. Globbing patterns apparently work differently on Windows platforms. This is something I need to experiment further with.
+
+Possibly related to the previous point, there seems to be an issue when accessing parent folders of the repository.
 
 ---
 
 ## Dependencies
 
-- [Express](https://expressjs.com/): Fast, unopinionated, minimalist web framework for Node.js
+- [Express](https://expressjs.com/): Fast, unopinionated, minimalist web framework for Node.js.
 - [chokidar](https://github.com/paulmillr/chokidar): Minimal and efficient cross-platform file watching library.
 - [ws](https://github.com/websockets/ws): WebSocket client and server implementation.
-- [morgan](https://github.com/expressjs/morgan): HTTP request logger middleware for node.js
+- [morgan](https://github.com/expressjs/morgan): HTTP request logger middleware for Node.js.
 - [dotenv](https://github.com/motdotla/dotenv): Zero-dependency module that loads environment variables.
 
 ---
