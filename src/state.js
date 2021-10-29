@@ -116,4 +116,11 @@ const updateRoot = async (state, newRoot) => {
 
 //------------------------------------------------------------------------------
 
-module.exports = { initState, updateRoot };
+const deleteRoot = async (state, rootId) => {
+  state.roots.delete(rootId);
+  await updateDirsWatched(state);
+};
+
+//------------------------------------------------------------------------------
+
+module.exports = { initState, updateRoot, deleteRoot };
