@@ -1,7 +1,6 @@
 # File explorer API
 
 - [About](#about)
-- [Features](#features)
 - [Installation](#installation)
 - [Implementation and choices](#implementation-and-choices)
 - [Notes](#notes)
