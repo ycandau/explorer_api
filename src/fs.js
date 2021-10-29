@@ -134,7 +134,7 @@ const getTrees = async (roots) => {
     }
   } catch (err) {
     errors.push({ ...err, type: 'tree' });
-    console.error(err);
+    console.error(err.message);
   }
 
   return { trees, errors };

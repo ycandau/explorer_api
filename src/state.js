@@ -2,6 +2,8 @@ const { resolve, basename } = require('path');
 const { stat } = require('fs/promises');
 const chokidar = require('chokidar');
 
+const getTrees = require('./fs');
+
 // root:        { name, path, id, expandedDirs: map<id, path> }
 // roots:       map<id, root>
 // watchedDirs: map<id, path>
@@ -9,12 +11,12 @@ const chokidar = require('chokidar');
 //------------------------------------------------------------------------------
 // Initialize the state
 
-const initState = async (paths) => {
-  const state = {
-    roots: new Map(),
-    watcher: newWatcher(),
-    watchedDirs: new Map(),
-  };
+const initState = async (paths, wss) => {
+  const roots = new Map();
+  const watcher = newWatcher(roots, wss);
+  const watchedDirs = new Map();
+
+  const state = { roots, watcher, watchedDirs };
 
   for (const path of paths) {
     await addRoot(state, path);
@@ -26,40 +28,48 @@ const initState = async (paths) => {
 //------------------------------------------------------------------------------
 // Set the watcher event handlers
 
-const newWatcher = () => {
+const WebSocket = require('ws');
+
+const newWatcher = (roots, wss) => {
+  const updateHandler = () => {
+    wss.clients.forEach(async (client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        const data = await getTrees(roots);
+        client.send(JSON.stringify(data));
+      }
+    });
+  };
+
   return chokidar
     .watch()
-    .on('add', (path) => 0)
-    .on('change', (path) => 0)
-    .on('unlink', (path) => 0)
-    .on('addDir', (path) => 0)
-    .on('unlinkDir', (path) => 0)
-    .on('error', (err) => 0);
-
-  // .on('add', (path) => console.log(`Add: ${path}`))
-  // .on('change', (path) => console.log(`Change: ${path}`))
-  // .on('unlink', (path) => console.log(`Remove: ${path}`))
-  // .on('addDir', (path) => console.log(`Add dir: ${path}`))
-  // .on('unlinkDir', (path) => console.log(`Remove dir: ${path}`))
-  // .on('error', (err) => console.error(err.message));
+    .on('add', updateHandler)
+    .on('unlink', updateHandler)
+    .on('change', updateHandler)
+    .on('addDir', updateHandler)
+    .on('unlinkDir', updateHandler)
+    .on('error', (err) => console.error(err.message));
 };
 
 //------------------------------------------------------------------------------
 // Add a root
 
 const addRoot = async (state, path) => {
-  const resolvedPath = resolve(path);
-  const stats = await stat(resolvedPath);
+  try {
+    const resolvedPath = resolve(path);
+    const stats = await stat(resolvedPath);
 
-  const root = {
-    name: basename(resolvedPath),
-    path: resolvedPath,
-    id: stats.ino,
-    expandedDirs: new Map([[stats.ino, resolvedPath]]),
-  };
+    const root = {
+      name: basename(resolvedPath),
+      path: resolvedPath,
+      id: stats.ino,
+      expandedDirs: new Map([[stats.ino, resolvedPath]]),
+    };
 
-  state.roots.set(stats.ino, root);
-  await updateDirsWatched(state);
+    state.roots.set(stats.ino, root);
+    await updateDirsWatched(state);
+  } catch (err) {
+    console.error(err.message);
+  }
 };
 
 //------------------------------------------------------------------------------
